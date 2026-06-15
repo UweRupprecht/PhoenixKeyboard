@@ -1,2 +1,12 @@
 # PhoenixKeyboard
-Extended Keyboardhandling for Delphi
+Extended Keyboard handling for Delphi
+
+This library intends to be a handler for Keyboard Shortcuts for Delphi
+
+Features:
+
+  - Use of "Menu"-Style Shortcuts
+  - Handle ESC Key
+  - Using of Left-/Right Shift and Control keys, or just Shift/Control
+    (your choice :) )
+  
