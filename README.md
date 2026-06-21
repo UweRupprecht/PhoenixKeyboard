@@ -3,7 +3,7 @@ Extended Keyboard handling for Delphi
 
 This library intends to be a handler for Keyboard Shortcuts for Delphi
 
-`#ff0000' Features:
+`#ff0000` Features:
 
   - Use of "Menu"-Style Shortcuts
   - Handle ESC Key
