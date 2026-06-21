@@ -103,10 +103,11 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
-        <DCC_ExeOutput>.\bin</DCC_ExeOutput>
-        <DCC_DcuOutput>.\bin</DCC_DcuOutput>
+        <DCC_ExeOutput>..\bin</DCC_ExeOutput>
+        <DCC_DcuOutput>..\bin</DCC_DcuOutput>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <DCC_UnitSearchPath>C:\delphilibs_ext\fastmm5;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -129,9 +130,9 @@
         </DelphiCompile>
         <DCCReference Include="mainform.pas">
             <Form>Form54</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\src\phoenixkeyboard.pas"/>
+        <DCCReference Include="..\src\phk.command.pas"/>
+        <DCCReference Include="..\src\phk.key.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -165,7 +166,7 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="4">
-                <DeployFile LocalName="Win32\Debug\Keyboarddev.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="..\bin\Keyboarddev.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>Keyboarddev.exe</RemoteName>
                         <Overwrite>true</Overwrite>
