@@ -70,8 +70,6 @@ Type
     Procedure Execute(Index:integer);
     Procedure ExecuteAll;
 
-
-
     function GetEnumerator:TEnumerator<TPHKCommand>;
 
     Property Items[index:integer]:TPHKCommand read GetItem;

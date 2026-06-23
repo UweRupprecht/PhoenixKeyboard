@@ -4,8 +4,10 @@ uses
   FastMM5,
   Vcl.Forms,
   mainform in 'mainform.pas' {Form54},
+  phk.general in '..\src\phk.general.pas',
+  phk.keys in '..\src\phk.keys.pas',
   phk.command in '..\src\phk.command.pas',
-  phk.key in '..\src\phk.key.pas';
+  phk.Hotkeys in '..\src\phk.Hotkeys.pas';
 
 {$R *.res}
 

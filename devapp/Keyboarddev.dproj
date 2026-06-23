@@ -131,8 +131,10 @@
         <DCCReference Include="mainform.pas">
             <Form>Form54</Form>
         </DCCReference>
+        <DCCReference Include="..\src\phk.general.pas"/>
+        <DCCReference Include="..\src\phk.keys.pas"/>
         <DCCReference Include="..\src\phk.command.pas"/>
-        <DCCReference Include="..\src\phk.key.pas"/>
+        <DCCReference Include="..\src\phk.Hotkeys.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

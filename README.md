@@ -20,3 +20,6 @@ V.1.0.0
 V.1.5.0
 - Define Hotkeys by Strings (like "ALT+T T")
 - improve custom data handling
+
+### History/Progress
+After some fail attempts, i finally found a good way to go.
