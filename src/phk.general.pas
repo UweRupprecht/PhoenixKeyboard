@@ -16,6 +16,16 @@ type
   //Set of as their can be multiple pressed at a time
   phk_ModifierKeys = set of phk_modifierkey;
 
+  //Api-struct for hook
+  PKBDLLHOOKSTRUCT = ^KBDLLHOOKSTRUCT;
+  KBDLLHOOKSTRUCT = Record
+    vkCode : DWORD;
+    scanCode : DWORD;
+    flags: DWord;
+    time : DWord;
+    dwExtra : ULONG_PTR;
+  End;
+
   //Mapping for modifiers from/to Virtual Key Codes used on API
 const
   cPhk_ModifierKeyCodes: array[phk_modifierkey] of DWord = (

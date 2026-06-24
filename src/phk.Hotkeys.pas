@@ -32,6 +32,7 @@ Type
     Destructor Destroy;override;
 
     function HandleKeyStroke(Code:DWord;Modifier:phk_ModifierKeys):THotKeyState;
+    function CheckKeyStroke(ACode:Dword;Modifier:phk_ModifierKeys):boolean;
 
   published
       Property Keys : TPhk_Keys read fkey;
@@ -54,7 +55,8 @@ Type
     //Hotkey handling
     //Handles the hotkey; true if handled false if not
     function HandleHotKey(ACode:DWord;Modifier:phk_ModifierKeys):boolean;
-
+    //Just check if a keystroke is matching a hotkey;without execute
+    function MatchHotkey(ACode:DWord;Modifier:phk_ModifierKeys;out HotKey:THotkey): boolean;
 
     //List functions
     function Add:integer;
@@ -73,6 +75,25 @@ Type
 implementation
 
 { THotKey }
+
+function THotKey.CheckKeyStroke(ACode: Dword;
+  Modifier: phk_ModifierKeys): boolean;
+var
+  i : integer;
+  tmp : THotKeyState;
+begin
+  result := false;
+  if (hkDisabled in fstate) then
+    exit;
+  for I := 0 to fkey.count-1 do
+  begin
+      if fkey[i].MatchKey(acode,modifier) then
+      begin
+        result := true;
+        exit;
+      end;
+  end;
+end;
 
 constructor THotKey.Create;
 begin
@@ -184,6 +205,24 @@ begin
     begin
       result := true;
       break;
+    end;
+  end;
+end;
+
+function THotKeys.MatchHotkey(ACode: DWord; Modifier: phk_ModifierKeys;
+  out HotKey: THotkey): boolean;
+var
+  i : integer;
+begin
+  result := false;
+  HotKey := NIL;
+  for i := 0 to fhots.count-1 do
+  begin
+    if fhots[i].CheckKeyStroke(ACode,Modifier) then
+    begin
+      result := true;
+      HotKey := fhots[i];
+      exit;
     end;
   end;
 end;

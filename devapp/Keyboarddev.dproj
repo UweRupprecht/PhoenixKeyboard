@@ -135,6 +135,7 @@
         <DCCReference Include="..\src\phk.keys.pas"/>
         <DCCReference Include="..\src\phk.command.pas"/>
         <DCCReference Include="..\src\phk.Hotkeys.pas"/>
+        <DCCReference Include="..\src\phk.manager.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

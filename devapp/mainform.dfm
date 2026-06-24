@@ -13,11 +13,20 @@ object Form54: TForm54
   TextHeight = 15
   object Button1: TButton
     Left = 8
-    Top = 24
+    Top = 8
     Width = 75
     Height = 25
-    Caption = 'Button1'
+    Caption = 'Start Hook'
     TabOrder = 0
     OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 112
+    Top = 8
+    Width = 75
+    Height = 25
+    Caption = 'Stop Hook'
+    TabOrder = 1
+    OnClick = Button2Click
   end
 end

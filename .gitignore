@@ -83,3 +83,4 @@ modules/
 bin
 *.json
 *.res
+wikiassets

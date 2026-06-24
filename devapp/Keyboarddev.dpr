@@ -7,7 +7,8 @@ uses
   phk.general in '..\src\phk.general.pas',
   phk.keys in '..\src\phk.keys.pas',
   phk.command in '..\src\phk.command.pas',
-  phk.Hotkeys in '..\src\phk.Hotkeys.pas';
+  phk.Hotkeys in '..\src\phk.Hotkeys.pas',
+  phk.manager in '..\src\phk.manager.pas';
 
 {$R *.res}
 
