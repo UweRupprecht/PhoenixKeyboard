@@ -45,6 +45,8 @@ object Form54: TForm54
     Height = 305
     Align = alBottom
     TabOrder = 3
+    ExplicitTop = 128
+    ExplicitWidth = 622
   end
   object al: TActionList
     Left = 504

@@ -60,6 +60,8 @@ var
 begin
   idx := HotkeyManager.me.Hotkeys.Add;
   ki := Hotkeymanager.me.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
+  ki := HotKeymanager.me.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
+  ki := Hotkeymanager.me.Hotkeys.HotKey[idx].keys.add(Ord('A'),[mkNone]);
   ci := HotKeyManager.Me.Hotkeys.HotKey[idx].Commands.Add;
   hotkeymanager.me.Hotkeys.HotKey[idx].Commands.Items[ci].CommandEvent := true;
   hotkeymanager.me.Hotkeys.HotKey[idx].Commands.Items[ci].OnCommand := HotkeyCommand;

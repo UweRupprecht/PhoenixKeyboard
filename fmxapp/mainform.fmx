@@ -1,0 +1,60 @@
+object Form55: TForm55
+  Left = 0
+  Top = 0
+  Caption = 'Form55'
+  ClientHeight = 480
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object btnstart: TButton
+    Position.X = 16.000000000000000000
+    Position.Y = 16.000000000000000000
+    TabOrder = 0
+    Text = 'Start Hook'
+    TextSettings.Trimming = None
+    OnClick = btnstartClick
+  end
+  object btnEnd: TButton
+    Position.X = 120.000000000000000000
+    Position.Y = 16.000000000000000000
+    TabOrder = 1
+    Text = 'End Hook'
+    TextSettings.Trimming = None
+    OnClick = btnEndClick
+  end
+  object btncreate: TButton
+    Position.X = 408.000000000000000000
+    Position.Y = 16.000000000000000000
+    Size.Width = 89.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Text = 'Create Hotkeys'
+    TextSettings.Trimming = None
+    OnClick = btncreateClick
+  end
+  object mdb: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Align = Bottom
+    Position.Y = 112.000000000000000000
+    Size.Width = 640.000000000000000000
+    Size.Height = 368.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    Viewport.Width = 636.000000000000000000
+    Viewport.Height = 364.000000000000000000
+  end
+  object ac: TActionList
+    Left = 576
+    Top = 72
+    object acAction: TAction
+      Text = 'Action'
+      OnExecute = acActionExecute
+    end
+  end
+end

@@ -9,6 +9,7 @@ interface
 uses
   winapi.windows,
   winapi.Messages,
+  system.classes,
   System.UITypes;
 const
    WM_PHKHOTKEY = WM_USER+9000; //Window message for commands
@@ -78,6 +79,22 @@ type
                Class Operator Initialize(out value:TKeyData);
   End;
 
+Type
+  //Helpers for handling the Sendmessage on FMX-APPS
+  TFMXOnMessage = Procedure (var msg:TMessage) of Object;
+  TFMXHelperWindow = Class
+  private
+    fHandle : HWND;
+    fonMessage : TFMXOnMessage;
+  protected
+     Procedure WndProc(var message:TMessage);
+  public
+    Constructor create;
+    Destructor Destroy;override;
+  published
+    Property Handle:HWND read fhandle;
+    Property onMessage : TFMXOnMessage read fonMessage write fonMessage;
+  End;
 
 //Calls GetAsyncKeyState for each modifierkey (if needed)
 function GetModifierKeyStates: phk_ModifierKeys;
@@ -155,6 +172,29 @@ end;
 function TKeyArea.InArea(Code: DWord): boolean;
 begin
   result := (code >= AreaBegin) and (code <= AreaEnd);
+end;
+
+{ TFMXHelperWindow }
+
+constructor TFMXHelperWindow.create;
+begin
+  inherited create;
+  fHandle := AllocateHwnd(WndProc);
+end;
+
+destructor TFMXHelperWindow.Destroy;
+begin
+  DeallocateHwnd(fhandle);
+  inherited;
+end;
+
+procedure TFMXHelperWindow.WndProc(var message: TMessage);
+begin
+  if message.Msg = WM_PHKHOTKEY then
+  begin
+    if assigned(fonMessage) then
+      fonMessage(Message);
+  end;
 end;
 
 end.
