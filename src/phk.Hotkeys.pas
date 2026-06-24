@@ -58,6 +58,7 @@ Type
     //Just check if a keystroke is matching a hotkey;without execute
     function MatchHotkey(ACode:DWord;Modifier:phk_ModifierKeys;out HotKey:THotkey): boolean;
 
+
     //List functions
     function Add:integer;
     function Delete(index:integer):boolean;

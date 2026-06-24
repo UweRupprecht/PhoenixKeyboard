@@ -12,6 +12,9 @@ uses
   phk.general,
   phk.command,
   phk.keys,
+{$IFDEF DEBUG}
+  CodeSiteLogging,
+{$ENDIF}
   phk.Hotkeys;
 
 Type
@@ -35,6 +38,8 @@ Type
     Class function Me:HotkeyManager;
     Procedure StartHooking;
     Procedure Stophooking;
+
+    Property Hotkeys : THotKeys read fHotkeys;
   published
   End;
 
@@ -94,16 +99,19 @@ begin
   begin
     pkh := PKBDLLHOOKSTRUCT(lparam);
     CurrentVK := pkh^.vkCode;
-    if (CurrentVK <= 255) then
+    //Spead up a bit; only keys $39 ("0") or $87 ("F24") are relevant
+    if (CurrentVK >= cMinKey) and (currentVK <= cMaxKey) then
     begin
       if (wParam = WM_KEYUP) or (wParam = WM_SYSKEYUP) then
-        fKeyStateMap[CurrentVK] := false
+      begin
+        fKeyStateMap[CurrentVK] := false;
+      end
       else //wm_keydown/wm_syskeydown
       begin
         if not fKeyStateMap[CurrentVK] then
         begin
-          fKeyStateMap[CurrentVK] := true; //First-Time
           CurrentMods := GetModifierKeyStates;
+          fKeyStateMap[CurrentVK] := true; //First-Time
           if fHotKeys.MatchHotkey(CurrentVK,CurrentMods,key) then
           begin
             WasHandled := false;

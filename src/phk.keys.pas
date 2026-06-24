@@ -69,6 +69,7 @@ implementation
 constructor TPHK_Key.Create;
 begin
   inherited create;
+  fillchar(fdata,sizeof(fdata),0);
 end;
 
 destructor TPHK_Key.Destroy;
@@ -98,7 +99,7 @@ end;
 
 function TPHK_Key.MatchKey(Code: Dword; Modifier: PHK_MODIFIERKEYS): boolean;
 begin
-  result := (fdata.State <> ksDisabled) and (fdata.Code = code) and (Modifier <= fdata.Modifier);
+  result := (fdata.State <> ksDisabled) and (fdata.Code = code) and (ModifierCompare(Modifier,fdata.Modifier));
 end;
 
 procedure TPHK_Key.SetEnable(const Value: boolean);
@@ -157,7 +158,7 @@ end;
 
 function TPHK_Keys.GetKey(Index: integer): TPHK_KEY;
 begin
-  if (index > 0) and (index < fkeys.count) then
+  if (index >= 0) and (index < fkeys.count) then
     result := fkeys[index];
 end;
 

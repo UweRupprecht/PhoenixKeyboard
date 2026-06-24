@@ -7,11 +7,8 @@ uses
   winapi.Windows,
   winapi.Messages,
   System.Classes,
-  System.Generics.Collections;
-
-const
-    //Define: All Messages of PHK has WM_USER+9xxx
-    WM_PHKKEYCOMMAND = WM_USER+9000;
+  System.Generics.Collections,
+  phk.general;
 
 Type
   //Kind of Command to use on a hotkey
@@ -113,7 +110,7 @@ begin
   if (ctAction in Ftypes) and (assigned(faction)) then
     faction.Execute;
   if (ctMessage in ftypes) and (ftarget <> 0) then
-    SendMessage(ftarget,WM_PHKKEYCOMMAND,fcdSize,Cardinal(fcustomdata));
+    SendMessage(ftarget,WM_PHKHOTKEY,fcdSize,Cardinal(fcustomdata));
 end;
 
 function TPhkCommand.GetCommandType(index: TPHKCommandType): boolean;

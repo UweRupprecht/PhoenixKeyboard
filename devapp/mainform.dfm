@@ -29,4 +29,29 @@ object Form54: TForm54
     TabOrder = 1
     OnClick = Button2Click
   end
+  object Button3: TButton
+    Left = 328
+    Top = 8
+    Width = 75
+    Height = 25
+    Caption = 'Add Hotkey'
+    TabOrder = 2
+    OnClick = Button3Click
+  end
+  object mdb: TMemo
+    Left = 0
+    Top = 136
+    Width = 624
+    Height = 305
+    Align = alBottom
+    TabOrder = 3
+  end
+  object al: TActionList
+    Left = 504
+    Top = 64
+    object acAction: TAction
+      Caption = 'MyAction'
+      OnExecute = acActionExecute
+    end
+  end
 end
