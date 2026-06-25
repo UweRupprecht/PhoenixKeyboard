@@ -1,6 +1,20 @@
 ﻿unit phk.command;
 (*
-    Types/Classes used on execution of a hotkey
+   Defines types and classes for handling commands
+
+   a command defines the action(s) that should be executed
+   when a hotkey is triggert
+
+   There are 3 Commandtypes, that can be used by
+   the developer, to handle a hotkey:
+
+   - Event: CommandEvent is set to true;onCommand is set to a proper eventhandler
+   - Action: CommandAction is set to true;Action is set to a proper Action (TBasicAction)
+   - Message: CommandMessage is set to true; Targethandle is set to a proper Windowhandle
+
+   Customdata can be forwarded only on Event and Message.
+
+   For each hotkey there is a list of Commands, that can be defined and triggert
 *)
 interface
 uses
@@ -12,113 +26,119 @@ uses
 
 Type
   //Kind of Command to use on a hotkey
-  TPhkCommandType = (ctEvent,ctAction,ctMessage);
+  TCommandType = (ctEvent,ctAction,ctMessage);
   //As multiple types can be triggert on Hotkey
-  TPhkCommandTypes = Set of TPhkCommandType;
+  TCommandTypes = Set of TCommandType;
+  //Type for customdata
+  TCustomData = Pointer;
   //Eventtype
-  TPhkCommandEvent = Procedure (Sender : TObject) of object;
-  TPHKCustomData = Pointer;
-  //Just a command that should be execute
-  TPhkCommand = Class(TPersistent)
+  TCommandEvent = Procedure (Sender : TObject;CustomData:TCustomData) of object;
+
+  //Basic command class, that deals with a single command
+  TCommand = Class(TPersistent)
   private
       findex : integer;
-      fTypes : TPHKCommandTypes;
-      fOnCmd : TPhkCommandEvent;
+      fTypes : TCommandTypes;
+      fOnCmd : TCommandEvent;
       fAction : TBasicAction;
       fTarget : HWND;
       fcdSize : DWord;
-      fCustomData : TPHKCustomData;
+      fCustomData : TCustomData;
   protected
-      function GetCommandType(index:TPHKCommandType):boolean;
-      Procedure SetCommandType(index:TPHKCommandType;value:boolean);
-
+      function GetCommandType(index:TCommandType):boolean;
+      Procedure SetCommandType(index:TCommandType;value:boolean);
   public
      Constructor Create;
      Destructor Destroy;override;
      Procedure Assign(source:TPersistent);
-     Procedure Execute;
+     Procedure Execute(Data:TCustomData=NIL;Size:DWord=0);
      Procedure SetCustomData(data:pointer;Size:Dword);
 
-     Property CustomData : TPHKCustomData read fCustomData;
+     Property CustomData : TCustomData read fCustomData;
   published
      Property ListIndex : integer read findex;
      Property CommandEvent : boolean index ctEvent read GetCommandType write SetCommandType;
      Property CommandAction : boolean index ctAction read GetCommandType write SetCommandType;
      Property CommandMessage: boolean index ctMessage read GetCommandType write SetCommandType;
 
-     Property OnCommand : TPHKCommandEvent read fonCmd write fonCmd;
+     Property OnCommand : TCommandEvent read fonCmd write fonCmd;
      Property Action : TBasicAction read fAction write fAction;
      Property TargetHandle : HWND read ftarget write ftarget;
   End;
 
-  //Used for further developement;
-  TPHKCommands = Class
+  //List of commands, that should be executed on a hotkey
+  TCommands = Class
   private
-    fitems : TObjectList<TPHKCommand>;
+    fcmd : TObjectList<TCommand>;
   protected
-    function GetItem(index:integer):TPHKCommand;
+    function GetItem(index:integer):TCommand;
   public
     constructor Create;
     Destructor Destroy;override;
-
+    //function for dealing with the list
     function Add:integer;
     Procedure Delete(index:integer);
     function Count:integer;
-    Procedure Execute(Index:integer);
-    Procedure ExecuteAll;
+    //execute a single command within the list
+    Procedure Execute(Index:integer;CustomData:TCustomData=NIL;DataSize:DWord=0);
+    //Execute all commands within the list
+    Procedure ExecuteAll(CustomData:TCustomData=NIL;datasize:DWord=0);
 
-    function GetEnumerator:TEnumerator<TPHKCommand>;
+    function GetEnumerator:TEnumerator<TCommand>;
 
-    Property Items[index:integer]:TPHKCommand read GetItem;
+    Property cmd[index:integer]:TCommand read GetItem;
   End;
 
 implementation
 
 { TPhkCommand }
 
-procedure TPhkCommand.Assign(source: TPersistent);
+procedure TCommand.Assign(source: TPersistent);
 begin
-  if (source is TPhkCommand) then
+  if (source is TCommand) then
   begin
-    self.findex := TPhkCommand(source).findex;
-    self.fTypes := TPhkCommand(source).fTypes;
-    self.fOnCmd := TPhkCommand(source).fOnCmd;
-    self.fAction := TPhkCommand(source).fAction;
-    self.fTarget := TPhkCommand(Source).fTarget;
-    self.fCustomData := TPhkCommand(source).fCustomData;
+    self.findex := TCommand(source).findex;
+    self.fTypes := TCommand(source).fTypes;
+    self.fOnCmd := TCommand(source).fOnCmd;
+    self.fAction := TCommand(source).fAction;
+    self.fTarget := TCommand(Source).fTarget;
+    self.fCustomData := TCommand(source).fCustomData;
   end;
 end;
 
-constructor TPhkCommand.Create;
+constructor TCommand.Create;
 begin
   inherited;
   findex := -1;
   ftypes := [];
   foncmd := NIL;
   faction := NIL;
+  fCustomdata := NIL;
 end;
 
-destructor TPhkCommand.Destroy;
+destructor TCommand.Destroy;
 begin
   inherited;
 end;
 
-procedure TPhkCommand.Execute;
+procedure TCommand.Execute(Data:TCustomData=NIL;Size:DWord=0);
 begin
+  if Data <> NIL then
+    SetCustomData(data,size);
   if (ctEvent in ftypes) and (Assigned(fonCmd)) then
-    fonCmd(self);
+    fonCmd(self,fcustomdata);
   if (ctAction in Ftypes) and (assigned(faction)) then
     faction.Execute;
   if (ctMessage in ftypes) and (ftarget <> 0) then
     SendMessage(ftarget,WM_PHKHOTKEY,fcdSize,Cardinal(fcustomdata));
 end;
 
-function TPhkCommand.GetCommandType(index: TPHKCommandType): boolean;
+function TCommand.GetCommandType(index: TCommandType): boolean;
 begin
   result := (index in ftypes);
 end;
 
-procedure TPhkCommand.SetCommandType(index: TPHKCommandType; value: boolean);
+procedure TCommand.SetCommandType(index: TCommandType; value: boolean);
 begin
   if (value) then
     include(ftypes,index)
@@ -126,7 +146,7 @@ begin
     exclude(ftypes,index);
 end;
 
-procedure TPhkCommand.SetCustomData(data:pointer; Size: Dword);
+procedure TCommand.SetCustomData(data:pointer; Size: Dword);
 begin
   fCustomData := data;
   fcdSize := size;
@@ -134,59 +154,58 @@ end;
 
 { TPHKCommands }
 
-function TPHKCommands.Add: integer;
+function TCommands.Add: integer;
 begin
-  result := fitems.Add(TPHKCommand.create);
-  fitems[result].findex := result;
+  result := fcmd.Add(TCommand.create);
+  fcmd[result].findex := result;
 end;
 
-function TPHKCommands.Count: integer;
+function TCommands.Count: integer;
 begin
-  result := fitems.count;
+  result := fcmd.count;
 end;
 
-constructor TPHKCommands.Create;
+constructor TCommands.Create;
 begin
   inherited;
-  fitems := TObjectlist<TPHKCommand>.create(true);
+  fcmd := TObjectlist<TCommand>.create(true);
 end;
 
-procedure TPHKCommands.Delete(index: integer);
+procedure TCommands.Delete(index: integer);
 begin
-  fitems.Delete(index);
+  fcmd.Delete(index);
 end;
 
-destructor TPHKCommands.Destroy;
+destructor TCommands.Destroy;
 begin
-  fitems.clear;
-  fitems.free;
+  fcmd.free;
   inherited;
 end;
 
-procedure TPHKCommands.Execute(Index: integer);
+procedure TCommands.Execute(Index:integer;CustomData:TCustomData=NIL;DataSize:DWord=0);
 begin
-  if (Index >= 0) and (index < fitems.count) then
-    fitems[index].Execute;
+  if (Index >= 0) and (index < fcmd.count) then
+    fcmd[index].Execute(CustomData,datasize);
 end;
 
-procedure TPHKCommands.ExecuteAll;
+procedure TCommands.ExecuteAll(CustomData:TCustomData=NIL;datasize:DWord=0);
 var
   i : integer;
 begin
-  for I := 0 to fitems.count-1 do
-    fitems[i].Execute;
+  for I := 0 to fcmd.count-1 do
+    fcmd[i].Execute(CustomData,datasize);
 end;
 
-function TPHKCommands.GetEnumerator: TEnumerator<TPHKCommand>;
+function TCommands.GetEnumerator: TEnumerator<TCommand>;
 begin
-  result := fitems.GetEnumerator;
+  result := fcmd.GetEnumerator;
 end;
 
-function TPHKCommands.GetItem(index: integer): TPHKCommand;
+function TCommands.GetItem(index: integer): TCommand;
 begin
   result := NIL;
-  if (index >= 0) and (index < fitems.count) then
-    result := fitems[index];
+  if (index >= 0) and (index < fcmd.count) then
+    result := fcmd[index];
 end;
 
 end.

@@ -1,8 +1,7 @@
 ﻿unit phk.keys;
 (*
-    Stores information on Keys/Hotkeys
+    Defines types and classes for defining and handling keystrokes
 *)
-{ TODO 3 -oUwe Rupprecht -cImprovement/Feature : Dev. BitMask-Sets for easier handling of sets }
 interface
 uses
   winapi.windows,
@@ -11,7 +10,7 @@ uses
   phk.general;
 
 type
-  //Defines a keystroke with some additional functions
+  //Defines a key with its data
   TPHK_Key = Class
   private
     fdata: TKeyData;
@@ -21,24 +20,28 @@ type
     procedure SetEnable(const Value: boolean);
     procedure SetKeyCode(const Value: DWord);
     procedure SetModifier(const Value: phk_ModifierKeys);
-
   protected
-
   public
     constructor Create;
     Destructor Destroy;override;
-
-
+    //Set the data with one call;
+    Procedure SetData(ACode:DWord;Modifiers:PHK_MODIFIERKEYS;state:TKeyState=ksNone);
+    //Does the defines key matches a given Key (incl. Modifierkeys)
     function MatchKey(Code:Dword;Modifier:PHK_MODIFIERKEYS):boolean;
+    //Current state of a key
     function KeyState:TKeyState;
+    //Simply set the state, when the key was handled to pressed
+    Procedure Triggert;
 
   published
+     //Virtual Key code of the key
      Property Keycode     : DWord read GetKeyCode write SetKeyCode;
+     //Modifier Key(s) that needs to be pressed
      Property Modifiers   : phk_ModifierKeys read GetModifier write SetModifier;
      Property Enabled     : boolean read GetEnable write SetEnable;
   end;
 
-  //List of keys
+  //List of keystrokes
   TPHK_Keys = Class
   private
     fkeys : TObjectList<TPHK_KEY>;
@@ -102,6 +105,14 @@ begin
   result := (fdata.State <> ksDisabled) and (fdata.Code = code) and (ModifierCompare(Modifier,fdata.Modifier));
 end;
 
+procedure TPHK_Key.SetData(ACode: DWord; Modifiers: PHK_MODIFIERKEYS;
+  state: TKeyState);
+begin
+  fdata.Code := ACode;
+  fdata.Modifier := Modifiers;
+  fdata.State := state;
+end;
+
 procedure TPHK_Key.SetEnable(const Value: boolean);
 begin
   if (value) and (fdata.State = ksDisabled) then
@@ -118,6 +129,12 @@ end;
 procedure TPHK_Key.SetModifier(const Value: phk_ModifierKeys);
 begin
   fdata.Modifier := value;
+end;
+
+procedure TPHK_Key.Triggert;
+begin
+  if (fdata.State <> ksDisabled) and (fdata.state <> ksPressed) then
+    fdata.State := ksPressed;
 end;
 
 { TPHK_Keys }

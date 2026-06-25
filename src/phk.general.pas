@@ -1,9 +1,8 @@
 ﻿unit phk.general;
 (*
-    global definition and types used in the lib
-    "0" - "9"  "A"    "Z"   Num0  NumDiv  F1   F24
-    $30-$39   $41 -  $5A   $5F  - $6F    $70 - $87
+  LICENSE: MIT (see LICENSE file)
 
+  Purpose: global types, constants and functions used within the library
 *)
 interface
 uses
@@ -12,14 +11,18 @@ uses
   system.classes,
   System.UITypes;
 const
-   WM_PHKHOTKEY = WM_USER+9000; //Window message for commands
+   //Windows message send to defined window, when using
+   //commandmessage on a command
+   WM_PHKHOTKEY = WM_USER+9000;
 type
   //Keys called modifierkey when the modify the meaning of a nother key
   //Example: A Key normaly produce "a", together with Shift it produces "A"
   //mkNumLock used to diff normal keys form the numpad keys
   //mkScroll might be used also for diff;More investiagtion needed
+
   phk_modifierkey = (mkNone, mkLShift, mkRShift, mkShift, mkLControl, mkRControl, mkControl,
-    mkLAlt, mkRAlt, mkAlt, mkLWin, mkRWin, mkWin, mkFnc, mkScroll, mkNumLock);
+    mkLAlt, mkRAlt, mkAlt, mkLWin, mkRWin, mkWin, mkScroll, mkNumLock);
+
   //Set of as their can be multiple pressed at a time
   phk_ModifierKeys = set of phk_modifierkey;
 
@@ -33,11 +36,15 @@ type
     dwExtra : ULONG_PTR;
   End;
 
+  //Helper record for defining "normal" keys
   TKeyArea = Record
                AreaBegin : DWord;
                AreaEnd   : DWord;
                function InArea(Code:DWord):boolean;
   End;
+
+//Defined "normal" keys to use; restricts hook to handle
+//only keystrokes with this codes
 const
   //Keys "0" - "9"
   cNumKeys : TKeyArea = (AreaBegin:$39;AreaEnd:$39);
@@ -50,6 +57,9 @@ const
   //Mapping for modifiers from/to Virtual Key Codes used on API
   cMinKey : DWord = $39;
   cMaxKey : DWord = $87;
+
+
+  //Virtual key codes for the modifier keys
 const
   cPhk_ModifierKeyCodes: array[phk_modifierkey] of DWord = (
     0,           //value for None
@@ -65,23 +75,29 @@ const
     vkLWin,
     vkRWin,
     0,           //vkWin has to be setup manually
-    vkFunction,
     vkScroll,
     vkNumLock
     );
+
 type
+  //state of a hotkey
+  //ksNone = default; not disabled and also not pressed
+  //ksDisabled = Disabled; No matching needed
+  //ksPressed = was already pressed or is pressed
   TKeyState = (ksNone,ksDisabled,ksPressed);
+  //basic record for storing infos on a keystroke
   TKeyData = Record
                Code : DWord; //Virtual Key code
                Modifier : phk_ModifierKeys; //Modifier keys
                State : TKeyState;
-
                Class Operator Initialize(out value:TKeyData);
   End;
 
 Type
   //Helpers for handling the Sendmessage on FMX-APPS
+  //Defines the onMessage event type
   TFMXOnMessage = Procedure (var msg:TMessage) of Object;
+  //Helper window, to handle WM_PHKHOTKEY messages on FMX
   TFMXHelperWindow = Class
   private
     fHandle : HWND;
@@ -98,7 +114,10 @@ Type
 
 //Calls GetAsyncKeyState for each modifierkey (if needed)
 function GetModifierKeyStates: phk_ModifierKeys;
+//Get the string representation of a modifier keys set
 function ModifierToString(Modifier:phk_Modifierkeys):string;
+//compares two modifier-sets;
+//result is true, when one of the FromHook-items is in the Defined Set
 function ModifierCompare(FromHook:PHK_MODIFIERKEYS;Defined:PHK_MODIFIERKEYS):boolean;
 implementation
 { TPHK_KeyData }
@@ -148,11 +167,9 @@ begin
   if (mkLWin in Modifier) then result := result+'LWin,';
   if (mkRWin in Modifier) then result := result+'RWin,';
   if (mkWin in Modifier) then result := result+'Win,';
-  if (mkFnc in Modifier) then result := result+'Fnc,';
   if (mkScroll in Modifier) then result := result+'Scroll,';
   if (mkNumLock in Modifier) then result := result+'NumLock,';
   result := copy(result,0,length(result)-1)+']';
-
 end;
 
 function ModifierCompare(FromHook:PHK_MODIFIERKEYS;Defined:PHK_MODIFIERKEYS):boolean;
