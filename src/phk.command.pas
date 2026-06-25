@@ -29,8 +29,6 @@ Type
   TCommandType = (ctEvent,ctAction,ctMessage);
   //As multiple types can be triggert on Hotkey
   TCommandTypes = Set of TCommandType;
-  //Type for customdata
-  TCustomData = Pointer;
   //Eventtype
   TCommandEvent = Procedure (Sender : TObject;CustomData:TCustomData) of object;
 

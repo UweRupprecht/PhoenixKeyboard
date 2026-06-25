@@ -18,10 +18,9 @@ uses
   phk.Hotkeys;
 
 Type
-  //No T, because its a singelton
-  HotkeyManager = Class
-  strict private
-      class var finstance : HotkeyManager;
+  //Switch to global variable instead of class var
+  //Do not create an instance of this class as it is implemented as singleton
+  THotkeyManager = Class
   private
      fHotkeys : THotkeys;
      fHook    : HHook; //handle to the hook
@@ -35,7 +34,6 @@ Type
   protected
     class Procedure FreeInstance;
   public
-    Class function Me:HotkeyManager;
     Procedure StartHooking;
     Procedure Stophooking;
 
@@ -45,28 +43,31 @@ Type
 
 function KeyboardCallback(nCode:Integer;wParam: WPARAM;lParam:LPARAM):LResult;stdcall;
 
+Var
+  HotkeyManager:THotkeyManager;
+
 implementation
 
 function KeyboardCallback(nCode:Integer;wParam: WPARAM;lParam:LPARAM):LResult;stdcall;
 begin
-  result := HotkeyManager.me.HandleHookMessage(nCode,wParam,lParam);
+  result := HotkeyManager.HandleHookMessage(nCode,wParam,lParam);
 end;
 
 { HotkeyManager }
 
-constructor HotkeyManager.Create;
+constructor THotkeyManager.Create;
 begin
   inherited;
   fhotkeys := THotkeys.create;
 end;
 
-destructor HotkeyManager.Destroy;
+destructor THotkeyManager.Destroy;
 begin
   fhotkeys.free;
   inherited;
 end;
 
-procedure HotkeyManager.DoHotKey(Sender: TObject; Hotkey: THotkey; ACode: DWord;
+procedure THotkeyManager.DoHotKey(Sender: TObject; Hotkey: THotkey; ACode: DWord;
   Modifier: phk_modifierkeys; var handled: boolean);
 var
   state :  THotKeyState;
@@ -75,25 +76,23 @@ begin
   state := hotkey.HandleKeyStroke(ACode,Modifier);
   if (state = hkInMode) or (state = hkTrigger) then
     Handled := true;
-
 end;
 
-class procedure HotkeyManager.FreeInstance;
+class procedure THotkeyManager.FreeInstance;
 begin
-  if (finstance.fHook <> 0) then
-    finstance.Stophooking;
-  if (finstance <> NIL) then
-    FreeAndNil(finstance);
+  if (HotkeyManager.fHook <> 0) then
+    HotkeyManager.Stophooking;
+  if (HotkeyManager <> NIL) then
+    FreeAndNil(HotkeyManager);
 end;
 
-function HotkeyManager.HandleHookMessage(ncode: Integer; wParam: WPARAM;
+function THotkeyManager.HandleHookMessage(ncode: Integer; wParam: WPARAM;
   lParam: LPARAM): LResult;
 var
   pkh: PKBDLLHOOKSTRUCT;
   currentVK:DWord;
   currentMods : phk_ModifierKeys;
-  key : THotKey;
-  WasHandled : boolean;
+  WasHandled,generalHandled : boolean;
 begin
   if (nCode = HC_ACTION) then
   begin
@@ -112,19 +111,26 @@ begin
         begin
           CurrentMods := GetModifierKeyStates;
           fKeyStateMap[CurrentVK] := true; //First-Time
-          if fHotKeys.MatchHotkey(CurrentVK,CurrentMods,key) then
+          //Need to be redesigned, cause multiple Hotkeys might be triggert
+          GeneralHandled := false;
+          for var key in fhotkeys do
           begin
-            WasHandled := false;
-            TThread.Synchronize(NIL,Procedure
+            if key.MatchKey(CurrentVK,CurrentMods) then
             begin
-              DoHotKey(self,key,CurrentVK,CurrentMods,wasHandled);
-            end
-            );
-            if WasHandled then
-            begin
-              result := 1;
-              exit;
+              WasHandled := false;
+              TThread.Synchronize(NIL,Procedure
+              begin
+                DoHotKey(self,key,CurrentVK,CurrentMods,wasHandled);
+              end
+              );
+              if WasHandled then GeneralHandled := true;
+
             end;
+          end;
+          if GeneralHandled then
+          begin
+            result := 1;
+            exit;
           end;
         end;
       end;
@@ -133,14 +139,8 @@ begin
   Result := CallNextHookEx(fHook, nCode, wParam, lParam);
 end;
 
-class function HotkeyManager.Me: HotkeyManager;
-begin
-  if finstance = NIL then
-    finstance := HotkeyManager.create;
-  result := finstance;
-end;
 
-procedure HotkeyManager.StartHooking;
+procedure THotkeyManager.StartHooking;
 begin
   //Prevent multihooking
   if (fHook <> 0) then
@@ -150,7 +150,7 @@ begin
     RaiseLastOsError;
 end;
 
-procedure HotkeyManager.Stophooking;
+procedure THotkeyManager.Stophooking;
 begin
   if fhook <> 0 then
   begin
@@ -160,7 +160,7 @@ begin
 end;
 
 INITIALIZATION
-  HotkeyManager.me;
+  HotkeyManager := THotkeyManager.create;
 FINALIZATION
   HotkeyManager.FreeInstance;
 end.

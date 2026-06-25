@@ -29,7 +29,7 @@ type
     Procedure DoKeyMessage(var msg:TMessage);
   public
     { Public-Deklarationen }
-    procedure hotkeyCommand(Sender:TObject);
+    procedure hotkeyCommand(Sender:TObject;customdata:TCustomdata);
   end;
 
 var
@@ -50,37 +50,37 @@ var
   ci,ki,idx : integer;
 
 begin
- idx := HotkeyManager.me.Hotkeys.Add;
-  ki := Hotkeymanager.me.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
-  ki := HotKeymanager.me.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
-  ki := Hotkeymanager.me.Hotkeys.HotKey[idx].keys.add(Ord('A'),[mkNone]);
-  ci := HotKeyManager.Me.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.me.Hotkeys.HotKey[idx].Commands.Items[ci].CommandEvent := true;
-  hotkeymanager.me.Hotkeys.HotKey[idx].Commands.Items[ci].OnCommand := HotkeyCommand;
+ idx := HotkeyManager.Hotkeys.Add;
+  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
+  ki := HotKeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
+  ki := Hotkeymanager.hotkeys.HotKey[idx].keys.add(Ord('A'),[mkNone]);
+  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
+  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandEvent := true;
+  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].OnCommand := HotkeyCommand;
 
-  idx := HotkeyManager.me.Hotkeys.Add;
-  ki := Hotkeymanager.me.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkAlt]);
-  ci := HotKeyManager.Me.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.me.Hotkeys.HotKey[idx].Commands.Items[ci].CommandMessage := True;
-  Hotkeymanager.me.Hotkeys.HotKey[idx].Commands.items[ci].TargetHandle := fhlp.Handle;
+  idx := HotkeyManager.Hotkeys.Add;
+  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkAlt]);
+  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
+  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandMessage := True;
+  Hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].TargetHandle := fhlp.Handle;
 
-  idx := HotkeyManager.me.Hotkeys.Add;
-  ki := Hotkeymanager.me.Hotkeys.HotKey[idx].Keys.Add(Ord('G'),[mkControl]);
-  ci := HotKeyManager.Me.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.me.Hotkeys.HotKey[idx].Commands.Items[ci].CommandAction := true;
-  Hotkeymanager.me.Hotkeys.HotKey[idx].Commands.items[ci].Action := acAction;
+  idx := HotkeyManager.Hotkeys.Add;
+  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('G'),[mkControl]);
+  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
+  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandAction := true;
+  Hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].Action := acAction;
 
 end;
 
 procedure TForm55.btnEndClick(Sender: TObject);
 begin
-  hotkeymanager.me.StartHooking;
+  hotkeymanager.StartHooking;
   mdb.lines.append('Hook disabled');
 end;
 
 procedure TForm55.btnstartClick(Sender: TObject);
 begin
-  hotkeymanager.me.StartHooking;
+  hotkeymanager.StartHooking;
   mdb.lines.append('Hook active');
 end;
 
@@ -100,7 +100,7 @@ begin
   fhlp.free;
 end;
 
-procedure TForm55.hotkeyCommand(Sender: TObject);
+procedure TForm55.hotkeyCommand(Sender: TObject;Customdata:Tcustomdata);
 begin
   Mdb.lines.append('Hotkey Command');
 end;

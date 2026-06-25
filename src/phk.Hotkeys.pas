@@ -1,8 +1,8 @@
 ﻿unit phk.Hotkeys;
 (*
-   Definition of Hotkeys
+    Types and classes for a complete Hotkey and
+    a list of hotkeys
 *)
-
 interface
 uses
   winapi.Windows,
@@ -13,17 +13,19 @@ uses
   phk.command;
 
 Type
-  THotKeyKind = (hkSingle,hkComplex); //Kind of Hotkey (Single keystroke or Multiple)
+  //State of a Hotkey
+  //hkNone = Nothing happend;Default
+  //hkDisabled = the hotkey is disabled
+  //hkInMode = One or a part of the keystrokes where triggert
+  //hkTrigger = all defined keystrokes where done and the command(s) can be executed
   THotKeyState = (hkNone,hkDisabled,hkInMode,hkTrigger);
-  THotKeyStates = Set of THotKeyState;
 
   //Definition of a single Hotkey
   THotKey = Class
   private
     fKey : TPHK_Keys; //We can have more than one keystroke !
-    fKind : THotKeyKind;
-    fstate : THotKeyStates;
-    fCmd   : TPHKCommands; //maybe multiple commands
+    fstate : THotKeyState;
+    fCmd   : TCommands; //maybe multiple commands
   protected
       function GetState(index:THotKeyState):boolean;
       Procedure SetState(index:THotKeyState;value:boolean);
@@ -31,13 +33,22 @@ Type
     constructor Create;
     Destructor Destroy;override;
 
-    function HandleKeyStroke(Code:DWord;Modifier:phk_ModifierKeys):THotKeyState;
-    function CheckKeyStroke(ACode:Dword;Modifier:phk_ModifierKeys):boolean;
+    //Simple checks, if the given code and modifer matches one of the keystrokes
+    //Does not modifing the state
+    function MatchKey(ACode:DWord;Modifier:phk_modifierkeys):boolean;
+    //Handles the given keystroke, set the state and if hkTrigger is reached
+    //executes the defined command(s)
+    function HandleKeyStroke(ACode:DWord;Modifier:phk_modifierkeys):THotKeyState;
+
+    //Simplify handling
+    function AddKey(ACode:DWord;Modifier:phk_ModifierKeys):integer;
+    function DelKey(ACode:DWord;Modifier:phk_ModifierKeys):boolean;overload;
+    function DelKey(Keyindex:integer):boolean;overload;
+
 
   published
       Property Keys : TPhk_Keys read fkey;
-      Property Kind : THotKeyKind read fKind;
-      Property Commands : TPHKCommands read fcmd;
+      Property Commands : TCommands read fcmd;
       Property ModeActive : boolean index hkInMode read GetState;
       Property Disable : boolean index hkDisabled read GetState Write SetState;
       Property Triggered: boolean index hkTrigger read GetState;
@@ -46,18 +57,18 @@ Type
   //List of hotkey definitions
   THotKeys = Class
   private
-      fHots : TObjectList<THotKey>;
+      fkeys : TObjectList<THotKey>;
   protected
     function GetHotKey(index:integer):THotKey;
   public
     constructor Create;
     Destructor Destroy;override;
-    //Hotkey handling
-    //Handles the hotkey; true if handled false if not
-    function HandleHotKey(ACode:DWord;Modifier:phk_ModifierKeys):boolean;
-    //Just check if a keystroke is matching a hotkey;without execute
-    function MatchHotkey(ACode:DWord;Modifier:phk_ModifierKeys;out HotKey:THotkey): boolean;
 
+    //Only checks if the given keystroke matches a hotkey
+    function MatchesHotkey(ACode:DWord;Modifiers:phk_modifierkeys):boolean;
+
+    //Handles a given keystroke; states where modified and commands will be executed
+    function HandleHotkey(ACode:DWord;Modifiers:phk_Modifierkeys):boolean;
 
     //List functions
     function Add:integer;
@@ -77,14 +88,14 @@ implementation
 
 { THotKey }
 
-function THotKey.CheckKeyStroke(ACode: Dword;
-  Modifier: phk_ModifierKeys): boolean;
+function THotKey.MatchKey(ACode: Dword;Modifier: phk_ModifierKeys): boolean;
 var
   i : integer;
   tmp : THotKeyState;
 begin
   result := false;
-  if (hkDisabled in fstate) then
+  //if the hotkey is disabled, there is no match
+  if (hkDisabled = fstate) then
     exit;
   for I := 0 to fkey.count-1 do
   begin
@@ -96,13 +107,40 @@ begin
   end;
 end;
 
+function THotKey.AddKey(ACode: DWord; Modifier: phk_ModifierKeys): integer;
+begin
+  result := fkey.Add(ACode,Modifier);
+end;
+
 constructor THotKey.Create;
 begin
   inherited;
   fkey := TPHK_Keys.create;
-  fcmd := TPHKCommands.create;
-  fkind := hkSingle;
-  fstate := [];
+  fcmd := TCommands.create;
+  fstate := hkNone;
+end;
+
+function THotKey.DelKey(ACode: DWord; Modifier: phk_ModifierKeys): boolean;
+var
+  i,idx : integer;
+begin
+  result := false;
+  idx := -1;
+  for I := 0 to fkey.count-1 do
+  begin
+    if fkey[i].MatchKey(ACode,Modifier) then
+    begin
+      idx := i;
+      break;
+    end;
+  end;
+  if (idx > -1) then
+    result := fkey.Remove(idx);
+end;
+
+function THotKey.DelKey(Keyindex: integer): boolean;
+begin
+  result := fkey.Remove(Keyindex);
 end;
 
 destructor THotKey.Destroy;
@@ -114,24 +152,24 @@ end;
 
 function THotKey.GetState(index: THotKeyState): boolean;
 begin
-  result := index in fstate;
+  result := index = fstate;
 end;
 
-function THotKey.HandleKeyStroke(Code: DWord;
-  Modifier: phk_ModifierKeys): THotKeyState;
+function THotKey.HandleKeyStroke(ACode:DWord;Modifier:phk_modifierkeys):THotKeyState;
 var
   i : integer;
   tmp : boolean;
 begin
   result := hkNone;
-  if (hkDisabled in fstate) then
+  //no need to handle the keystroke
+  if (hkDisabled = fstate) then
   begin
     result := hkDisabled;
     exit;
   end;
   for I := 0 to fkey.count-1 do
   begin
-    tmp := fkey[i].MatchKey(code,modifier);
+    tmp := fkey[i].MatchKey(ACode,modifier);
     if tmp and (i < fkey.count-1) then
       result := hkInMode;
     if tmp and (i = fkey.count-1) then
@@ -144,65 +182,61 @@ end;
 procedure THotKey.SetState(index: THotKeyState; value: boolean);
 begin
   if value then
-    include(fstate,index)
-  else
-    exclude(fstate,index);
+    fstate := index;
 end;
 
 { THotKeys }
 
 function THotKeys.Add: integer;
 begin
-  result := fHots.Add(THotKey.create);
+  result := fkeys.Add(THotKey.create);
 end;
 
 function THotKeys.Count: integer;
 begin
-  result := fhots.count;
+  result := fkeys.count;
 end;
 
 constructor THotKeys.Create;
 begin
   inherited;
-  fhots := TObjectList<THotKey>.create(true);
+  fkeys := TObjectList<THotKey>.create(true);
 end;
 
 function THotKeys.Delete(index: integer): boolean;
 begin
   result := false;
-  if (index >= 0) and (index < fhots.count) then
+  if (index >= 0) and (index < fkeys.count) then
   begin
-    fhots.Delete(index);
+    fkeys.Delete(index);
     result := true;
   end;
 end;
 
 destructor THotKeys.Destroy;
 begin
-  fhots.clear;
-  fhots.free;
+  fkeys.free;
   inherited;
 end;
 
 function THotKeys.GetEnumerator: TEnumerator<THotKey>;
 begin
-  result := fhots.GetEnumerator;
+  result := fkeys.GetEnumerator;
 end;
 
 function THotKeys.GetHotKey(index: integer): THotKey;
 begin
   result := NIL;
-  if (index >= 0) and (index < fhots.count) then
-    result := fhots[index];
+  if (index >= 0) and (index < fkeys.count) then
+    result := fkeys[index];
 end;
 
-function THotKeys.HandleHotKey(ACode: DWord;
-  Modifier: phk_ModifierKeys): boolean;
+function THotKeys.HandleHotKey(ACode: DWord;Modifiers: phk_ModifierKeys): boolean;
 begin
   result := false;
-  for var k in fhots do
+  for var k in fkeys do
   begin
-    if (k.HandleKeyStroke(ACode,Modifier) in [hkInMode,hkTrigger]) then
+    if (k.HandleKeyStroke(ACode,Modifiers) in [hkInMode,hkTrigger]) then
     begin
       result := true;
       break;
@@ -210,19 +244,16 @@ begin
   end;
 end;
 
-function THotKeys.MatchHotkey(ACode: DWord; Modifier: phk_ModifierKeys;
-  out HotKey: THotkey): boolean;
+function THotKeys.Matcheshotkey(ACode: DWord; Modifiers: phk_ModifierKeys): boolean;
 var
   i : integer;
 begin
   result := false;
-  HotKey := NIL;
-  for i := 0 to fhots.count-1 do
+  for i := 0 to fkeys.count-1 do
   begin
-    if fhots[i].CheckKeyStroke(ACode,Modifier) then
+    if fkeys[i].MatchKey(ACode,Modifiers) then
     begin
       result := true;
-      HotKey := fhots[i];
       exit;
     end;
   end;

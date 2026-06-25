@@ -112,6 +112,9 @@ Type
     Property onMessage : TFMXOnMessage read fonMessage write fonMessage;
   End;
 
+  //Type for customdata
+  TCustomData = Pointer;
+
 //Calls GetAsyncKeyState for each modifierkey (if needed)
 function GetModifierKeyStates: phk_ModifierKeys;
 //Get the string representation of a modifier keys set
