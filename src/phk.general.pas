@@ -43,6 +43,7 @@ type
                function InArea(Code:DWord):boolean;
   End;
 
+  THookMode = (hmLocal,hmGlobal);
 //Defined "normal" keys to use; restricts hook to handle
 //only keystrokes with this codes
 const

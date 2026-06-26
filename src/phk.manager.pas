@@ -25,11 +25,13 @@ Type
      fHotkeys : THotkeys;
      fHook    : HHook; //handle to the hook
      fKeystatemap : array[0..255] of boolean; //prevent from keyrepeat
+     fHookMode : THookMode;
 
      constructor Create;
      destructor Destroy;override;
-     function HandleHookMessage(ncode:Integer;wParam:WPARAM;lParam:LPARAM):LResult;
 
+     function HandleGlobalHookMessage(ncode:Integer;wParam:WPARAM;lParam:LPARAM):LResult;
+     function HandleLocalHookMessage(nCode:integer;wParam:WPARAM;lParam:LPARAM):LResult;
      Procedure DoHotKey(Sender:TObject;Hotkey:THotkey;ACode:DWord;Modifier:phk_modifierkeys;var handled:boolean);
   protected
     class Procedure FreeInstance;
@@ -38,6 +40,7 @@ Type
     Procedure Stophooking;
 
     Property Hotkeys : THotKeys read fHotkeys;
+    Property HookMode: THookMode read fHookmode;
   published
   End;
 
@@ -50,7 +53,10 @@ implementation
 
 function KeyboardCallback(nCode:Integer;wParam: WPARAM;lParam:LPARAM):LResult;stdcall;
 begin
-  result := HotkeyManager.HandleHookMessage(nCode,wParam,lParam);
+  if (HotKeyManager.fHookMode = hmGlobal) then
+    result := HotkeyManager.HandleGlobalHookMessage(nCode,wParam,lParam);
+  if (HotkeyManager.fHookMode = hmLocal) then
+    result := HotkeyManager.HandleLocalHookMessage(nCode,wParam,lParam);
 end;
 
 { HotkeyManager }
@@ -59,6 +65,7 @@ constructor THotkeyManager.Create;
 begin
   inherited;
   fhotkeys := THotkeys.create;
+  fHookMode := hmLocal;
 end;
 
 destructor THotkeyManager.Destroy;
@@ -86,7 +93,7 @@ begin
     FreeAndNil(HotkeyManager);
 end;
 
-function THotkeyManager.HandleHookMessage(ncode: Integer; wParam: WPARAM;
+function THotkeyManager.HandleGlobalHookMessage(ncode: Integer; wParam: WPARAM;
   lParam: LPARAM): LResult;
 var
   pkh: PKBDLLHOOKSTRUCT;
@@ -139,6 +146,12 @@ begin
   Result := CallNextHookEx(fHook, nCode, wParam, lParam);
 end;
 
+
+function THotkeyManager.HandleLocalHookMessage(nCode: integer; wParam: WPARAM;
+  lParam: LPARAM): LResult;
+begin
+  //Todo
+end;
 
 procedure THotkeyManager.StartHooking;
 begin
