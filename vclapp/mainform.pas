@@ -43,7 +43,7 @@ end;
 
 procedure TForm54.Button1Click(Sender: TObject);
 begin
-  Hotkeymanager.StartHooking;
+  Hotkeymanager.StartHooking(hmLocal);
   mdb.lines.append('Hook activated');
 end;
 

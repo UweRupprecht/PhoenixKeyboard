@@ -36,7 +36,8 @@ Type
   protected
     class Procedure FreeInstance;
   public
-    Procedure StartHooking;
+    //Hookhandling //
+    Procedure StartHooking(Hookmode:THookMode);
     Procedure Stophooking;
 
     Property Hotkeys : THotKeys read fHotkeys;
@@ -149,16 +150,68 @@ end;
 
 function THotkeyManager.HandleLocalHookMessage(nCode: integer; wParam: WPARAM;
   lParam: LPARAM): LResult;
+var
+  currentVK:DWord;
+  currentMods : phk_ModifierKeys;
+  isKeyUp : boolean;
+  WasHandled,generalHandled : boolean;
 begin
-  //Todo
+  if nCode >= 0 then
+  begin
+    isKeyUp := (Lparam and $80000000) <> 0;
+    currentVK := wParam;
+    if (CurrentVK >= cMinKey) and (currentVK <= cMaxKey) then
+    begin
+      if isKeyUp then
+      begin
+        fKeyStateMap[CurrentVK] := false;
+      end
+      else //wm_keydown/wm_syskeydown
+      begin
+        if not fKeyStateMap[CurrentVK] then
+        begin
+          CurrentMods := GetModifierKeyStates;
+          fKeyStateMap[CurrentVK] := true; //First-Time
+          //Need to be redesigned, cause multiple Hotkeys might be triggert
+          GeneralHandled := false;
+          for var key in fhotkeys do
+          begin
+            if key.MatchKey(CurrentVK,CurrentMods) then
+            begin
+              WasHandled := false;
+              TThread.Synchronize(NIL,Procedure
+              begin
+                DoHotKey(self,key,CurrentVK,CurrentMods,wasHandled);
+              end
+              );
+              if WasHandled then GeneralHandled := true;
+
+            end;
+          end;
+          if GeneralHandled then
+          begin
+            result := 1;
+            exit;
+          end;
+        end;
+      end;
+    end;
+
+  end;
+  result := CallNextHookEx(fhook,ncode,wparam,lparam);
 end;
 
-procedure THotkeyManager.StartHooking;
+procedure THotkeyManager.StartHooking(Hookmode:THookMode);
 begin
   //Prevent multihooking
   if (fHook <> 0) then
     UnhookWindowsHookEx(fhook);
-  fhook := SetWindowsHookEx(WH_KEYBOARD_LL,@KeyboardCallback,hInstance,0);
+
+  fhookMode := HookMode;
+  if (fHookMode = hmLocal) then
+    fhook := SetWindowsHookEx(WH_KEYBOARD,@KeyboardCallback,0,GetCurrentThreadID())
+  else
+    fhook := SetWindowsHookEx(WH_KEYBOARD_LL,@KeyboardCallback,hInstance,0);
   if fhook = 0 then
     RaiseLastOsError;
 end;
