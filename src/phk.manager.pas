@@ -35,13 +35,51 @@ Type
      Procedure DoHotKey(Sender:TObject;Hotkey:THotkey;ACode:DWord;Modifier:phk_modifierkeys;var handled:boolean);
   protected
     class Procedure FreeInstance;
+    function CheckHotId(HotId:integer):boolean;
   public
-    //Hookhandling //
-    Procedure StartHooking(Hookmode:THookMode);
-    Procedure Stophooking;
+    //Starts listening;Mode is the listening mode;
+    //hmLocal = Based upon application thread (default)
+    //hmLocal = Global listening
+    Procedure Start(Mode:THookmode=hmLocal);
+    //Stops listening; Can be used to pause the listening on critical parts
+    //automatically called, when instance is freed
+    Procedure Stop;
+    //Checks if the manager is listening
+    function IsListening:boolean;
 
-    Property Hotkeys : THotKeys read fHotkeys;
-    Property HookMode: THookMode read fHookmode;
+    //Defining Hotkeys and there actions
+    //Its based on the HotID which identifies a Hotkey
+
+    //Adds a new Hotkey to the list of hotkeys
+    //Keycode is the virtual key code for the keystroke
+    //Modifiers is a set of modifier keys (shift,control....)
+    //Returns the HotId of the new Hotkey
+    function AddHotkey(Keycode:dWord;Modifiers:phk_modifierkeys):integer;
+    //Adds another keystroke to an existing Hotkey
+    //HotID is the id of the existing hotkey
+    //Keycode is the virtual key code of the key
+    //Modifiers is a set of modifier keys
+    Procedure AddKeyStroke(HotID:integer;KeyCode:DWord;Modifiers:phk_modifierkeys);
+    //Disables/enables a hotkey
+    //HotID is the ID of an existing Hotkey
+    //disable = disable/enable hotkey
+    Procedure DisableHotKey(HotID:integer;disable:boolean=true);
+    //Removes a Hotkey from the Hotkeylist
+    //Hotid is the ID of the Hotkey to delete
+    //returns true on success
+    function RemoveHotkey(HotID:integer):boolean;
+
+    //Adds the "Action" to the Hotkey
+    //Using a eventhandler
+    Procedure AddHotkeyEvent(HotID:Integer;Proc:TNotifyCommand);
+    //Using a Action (TBasicAction)
+    Procedure AddHotkeyAction(HotID:Integer;Action:TBasicAction);
+    //Using SendMessage WM_PHKHOTKEY to the targetwindow
+    Procedure AddHotkeyMessage(HotID:Integer;TargetWindow:HWND);
+
+
+
+    Property Mode: THookMode read fHookmode;
   published
   End;
 
@@ -60,7 +98,45 @@ begin
     result := HotkeyManager.HandleLocalHookMessage(nCode,wParam,lParam);
 end;
 
+
 { HotkeyManager }
+
+function THotkeyManager.AddHotkey(Keycode: dWord;
+  Modifiers: phk_modifierkeys): integer;
+begin
+  result := fHotkeys.Add;
+  fhotkeys.HotKey[result].AddKey(KeyCode,Modifiers);
+end;
+
+procedure THotkeyManager.AddHotkeyAction(HotID: Integer; Action: TBasicAction);
+begin
+  if CheckHotId(HotID)then
+    fhotkeys.Hotkey[HotId].AddActionCommand(Action);
+end;
+
+procedure THotkeyManager.AddHotkeyEvent(HotID: Integer; Proc: TNotifyCommand);
+begin
+  if CheckHotId(HotID)then
+    fhotkeys.Hotkey[HotId].AddEventCommand(proc);
+end;
+
+procedure THotkeyManager.AddHotkeyMessage(HotID: Integer; TargetWindow: HWND);
+begin
+  if CheckHotId(HotID)then
+    fhotkeys.Hotkey[HotId].AddMessageCommand(TargetWindow);
+end;
+
+procedure THotkeyManager.AddKeyStroke(HotID: integer; KeyCode: DWord;
+  Modifiers: phk_modifierkeys);
+begin
+  if CheckHotID(HotID) then
+    fhotkeys.HotKey[hotid].AddKey(KeyCode,Modifiers);
+end;
+
+function THotkeyManager.CheckHotId(HotId: integer): boolean;
+begin
+  result := (HotId >= 0) and (HotId < fHotkeys.count);
+end;
 
 constructor THotkeyManager.Create;
 begin
@@ -73,6 +149,12 @@ destructor THotkeyManager.Destroy;
 begin
   fhotkeys.free;
   inherited;
+end;
+
+procedure THotkeyManager.DisableHotKey(HotID: integer; disable: boolean);
+begin
+  if CheckHotId(HotId) then
+    fhotkeys.HotKey[HotId].Disable := disable;
 end;
 
 procedure THotkeyManager.DoHotKey(Sender: TObject; Hotkey: THotkey; ACode: DWord;
@@ -89,7 +171,7 @@ end;
 class procedure THotkeyManager.FreeInstance;
 begin
   if (HotkeyManager.fHook <> 0) then
-    HotkeyManager.Stophooking;
+    HotkeyManager.Stop;
   if (HotkeyManager <> NIL) then
     FreeAndNil(HotkeyManager);
 end;
@@ -201,13 +283,27 @@ begin
   result := CallNextHookEx(fhook,ncode,wparam,lparam);
 end;
 
-procedure THotkeyManager.StartHooking(Hookmode:THookMode);
+function THotkeyManager.IsListening: boolean;
+begin
+  result := (fhook <> 0);
+end;
+
+function THotkeyManager.RemoveHotkey(HotID: integer): boolean;
+begin
+  result := false;
+  if CheckHotId(HotID) then
+    result := fhotkeys.Delete(HotId);
+end;
+
+procedure THotkeyManager.Start(Mode:THookMode);
 begin
   //Prevent multihooking
   if (fHook <> 0) then
+  begin
     UnhookWindowsHookEx(fhook);
-
-  fhookMode := HookMode;
+    fhook := 0;
+  end;
+  fhookMode := Mode;
   if (fHookMode = hmLocal) then
     fhook := SetWindowsHookEx(WH_KEYBOARD,@KeyboardCallback,0,GetCurrentThreadID())
   else
@@ -216,7 +312,7 @@ begin
     RaiseLastOsError;
 end;
 
-procedure THotkeyManager.Stophooking;
+procedure THotkeyManager.Stop;
 begin
   if fhook <> 0 then
   begin

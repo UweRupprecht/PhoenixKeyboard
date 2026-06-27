@@ -25,7 +25,7 @@ type
     Procedure WmPHKHotkey(var msg:TMessage);message WM_PHKHOTKEY;
   public
     { Public-Deklarationen }
-    procedure hotkeyCommand(Sender:TObject;CustomData:TCustomData);
+    procedure hotkeyCommand(Sender:TObject);
   end;
 
 var
@@ -43,46 +43,33 @@ end;
 
 procedure TForm54.Button1Click(Sender: TObject);
 begin
-  Hotkeymanager.StartHooking(hmLocal);
+  Hotkeymanager.Start(hmLocal);
   mdb.lines.append('Hook activated');
 end;
 
 procedure TForm54.Button2Click(Sender: TObject);
 begin
   mdb.lines.append('Hook deactivated');
-  Hotkeymanager.Stophooking;
+  Hotkeymanager.Stop;
 end;
 
 procedure TForm54.Button3Click(Sender: TObject);
 var
-  ci,ki,idx : integer;
-
+  HotId:integer;
 begin
-  idx := HotkeyManager.Hotkeys.Add;
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
-  ki := HotKeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].keys.add(Ord('A'),[mkNone]);
-  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.Cmd[ci].CommandEvent := true;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].OnCommand := HotkeyCommand;
+  HotId := HotkeyManager.AddHotkey(Ord('F'),[mkControl]);
+  HotKeyManager.AddHotkeyEvent(HotID,HotkeyCommand);
 
-  idx := HotkeyManager.Hotkeys.Add;
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkAlt]);
-  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandMessage := True;
-  Hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].TargetHandle := handle;
+  HotId := HotkeyManager.AddHotkey(Ord('F'),[mkLAlt]);
+  Hotkeymanager.AddHotkeyMessage(HotId,handle);
 
-  idx := HotkeyManager.Hotkeys.Add;
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('G'),[mkControl]);
-  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandAction := true;
-  Hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].Action := acAction;
-
+  HotId := HotKeyManager.AddHotkey(Ord('G'),[mkLControl]);
+  HotkeyManager.AddHotkeyAction(HotId,acAction);
 end;
 
-procedure TForm54.hotkeyCommand(Sender: TObject;customdata:TCustomData);
+procedure TForm54.hotkeyCommand(Sender: TObject);
 begin
-  mdb.lines.append('Command');
+  mdb.lines.append('Event triggert');
 end;
 
 procedure TForm54.WmPHKHotkey(var msg: TMessage);
