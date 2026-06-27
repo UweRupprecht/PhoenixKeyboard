@@ -30,180 +30,252 @@ Type
   //As multiple types can be triggert on Hotkey
   TCommandTypes = Set of TCommandType;
   //Eventtype
-  TCommandEvent = Procedure (Sender : TObject;CustomData:TCustomData) of object;
+  TNotifyCommand = Procedure (Sender : TObject) of object;
 
-  //Basic command class, that deals with a single command
-  TCommand = Class(TPersistent)
+  //Baseclass for commands
+  TBasicCommand = Class(TPersistent)
   private
-      findex : integer;
-      fTypes : TCommandTypes;
-      fOnCmd : TCommandEvent;
-      fAction : TBasicAction;
-      fTarget : HWND;
-      fcdSize : DWord;
-      fCustomData : TCustomData;
-  protected
-      function GetCommandType(index:TCommandType):boolean;
-      Procedure SetCommandType(index:TCommandType;value:boolean);
+     fCid : Integer; //Id for identification within a list
   public
-     Constructor Create;
+     Constructor Create(AId:Integer);
      Destructor Destroy;override;
-     Procedure Assign(source:TPersistent);
-     Procedure Execute(Data:TCustomData=NIL;Size:DWord=0);
-     Procedure SetCustomData(data:pointer;Size:Dword);
-
-     Property CustomData : TCustomData read fCustomData;
+     Procedure Assign(source:TPersistent);override;
+     Procedure Execute;virtual;abstract;
+     function TypeOf:TCommandType;virtual;abstract;
   published
-     Property ListIndex : integer read findex;
-     Property CommandEvent : boolean index ctEvent read GetCommandType write SetCommandType;
-     Property CommandAction : boolean index ctAction read GetCommandType write SetCommandType;
-     Property CommandMessage: boolean index ctMessage read GetCommandType write SetCommandType;
-
-     Property OnCommand : TCommandEvent read fonCmd write fonCmd;
-     Property Action : TBasicAction read fAction write fAction;
-     Property TargetHandle : HWND read ftarget write ftarget;
+     Property CID   : integer read fcid;
   End;
 
-  //List of commands, that should be executed on a hotkey
+  TEventCommand = Class(TBasicCommand)
+  private
+      fonExecute : TNotifyCommand;
+  public
+      Procedure Assign(Source:TPersistent);override;
+      Procedure Execute;override;
+      Destructor Destroy;override;
+      function TypeOf:TCommandType;override;
+  published
+     Property onExecute : TNotifyCommand read fonExecute Write fonExecute;
+  End;
+
+  TActionCommand = Class(TBasicCommand)
+  private
+    faction : TBasicAction;
+  public
+    Procedure Assign(source:TPersistent);override;
+    Procedure Execute;override;
+    function TypeOf:TCommandType;override;
+    destructor Destroy;override;
+  published
+    Property Action : TBasicAction read faction write faction;
+  End;
+
+  TMessageCommand = Class(TBasicCommand)
+  private
+      fTarget : HWND;
+  public
+    Procedure Assign(source:TPersistent);override;
+    Procedure Execute;override;
+    function Typeof:TCommandType;override;
+    destructor Destroy;override;
+  published
+    Property TargetWindow:HWND read fTarget write fTarget;
+  End;
+
+  //List of Commands
   TCommands = Class
   private
-    fcmd : TObjectList<TCommand>;
+     fcmds : TObjectlist<TBasicCommand>;
   protected
-    function GetItem(index:integer):TCommand;
+     function GetCommand(Index:integer):TBasicCommand;
   public
     constructor Create;
     Destructor Destroy;override;
-    //function for dealing with the list
-    function Add:integer;
-    Procedure Delete(index:integer);
+
+    //Listhandling
+    function AddEventCommand(proc:TNotifyCommand):integer;
+    function AddActionCommand(Act:TBasicAction):integer;
+    function AddMessageCommand(Window:HWND):integer;
+    Procedure DeleteCommand(Index:integer);
     function Count:integer;
-    //execute a single command within the list
-    Procedure Execute(Index:integer;CustomData:TCustomData=NIL;DataSize:DWord=0);
-    //Execute all commands within the list
-    Procedure ExecuteAll(CustomData:TCustomData=NIL;datasize:DWord=0);
+    Procedure Execute(index:integer);
+    Procedure ExecuteAll;
+    //Enumerator
+    function GetEnumerator:TEnumerator<TBasicCommand>;
 
-    function GetEnumerator:TEnumerator<TCommand>;
-
-    Property cmd[index:integer]:TCommand read GetItem;
+    Property Commands[index:integer] : TBasicCommand read GetCommand;default;
   End;
+
 
 implementation
 
-{ TPhkCommand }
+{ TBasicCommand }
 
-procedure TCommand.Assign(source: TPersistent);
+procedure TBasicCommand.Assign(source: TPersistent);
 begin
-  if (source is TCommand) then
-  begin
-    self.findex := TCommand(source).findex;
-    self.fTypes := TCommand(source).fTypes;
-    self.fOnCmd := TCommand(source).fOnCmd;
-    self.fAction := TCommand(source).fAction;
-    self.fTarget := TCommand(Source).fTarget;
-    self.fCustomData := TCommand(source).fCustomData;
-  end;
+  if source is TBasicCommand then
+    fcid := TBasicCommand(source).fCid;
 end;
 
-constructor TCommand.Create;
+constructor TBasicCommand.Create(AId: Integer);
+begin
+  inherited Create;
+  fcid := AId;
+end;
+
+destructor TBasicCommand.Destroy;
 begin
   inherited;
-  findex := -1;
-  ftypes := [];
-  foncmd := NIL;
+end;
+
+{ TEventCommand }
+
+procedure TEventCommand.Assign(Source: TPersistent);
+begin
+  inherited;
+  if Source is TEventCommand then
+    fonExecute := TEventCommand(Source).fonExecute;
+end;
+
+destructor TEventCommand.Destroy;
+begin
+  fonExecute := NIL;
+  inherited;
+end;
+
+procedure TEventCommand.Execute;
+begin
+  if assigned(fonExecute) then
+    fonExecute(self);
+end;
+
+function TEventCommand.TypeOf: TCommandType;
+begin
+  result := ctEvent;
+end;
+
+{ TActionCommand }
+
+procedure TActionCommand.Assign(source: TPersistent);
+begin
+  inherited;
+  if (source is TActionCommand) then
+    faction := TActionCommand(source).faction;
+end;
+
+destructor TActionCommand.Destroy;
+begin
   faction := NIL;
-  fCustomdata := NIL;
-end;
-
-destructor TCommand.Destroy;
-begin
   inherited;
 end;
 
-procedure TCommand.Execute(Data:TCustomData=NIL;Size:DWord=0);
+procedure TActionCommand.Execute;
 begin
-  if Data <> NIL then
-    SetCustomData(data,size);
-  if (ctEvent in ftypes) and (Assigned(fonCmd)) then
-    fonCmd(self,fcustomdata);
-  if (ctAction in Ftypes) and (assigned(faction)) then
+  if assigned(faction) then
     faction.Execute;
-  if (ctMessage in ftypes) and (ftarget <> 0) then
-    SendMessage(ftarget,WM_PHKHOTKEY,fcdSize,Cardinal(fcustomdata));
 end;
 
-function TCommand.GetCommandType(index: TCommandType): boolean;
+function TActionCommand.TypeOf: TCommandType;
 begin
-  result := (index in ftypes);
+  result := ctAction;
 end;
 
-procedure TCommand.SetCommandType(index: TCommandType; value: boolean);
+{ TMessageCommand }
+
+procedure TMessageCommand.Assign(source: TPersistent);
 begin
-  if (value) then
-    include(ftypes,index)
-  else
-    exclude(ftypes,index);
+  inherited;
+  if (source is TMessageCommand) then
+    fTarget := TMessageCommand(source).fTarget;
 end;
 
-procedure TCommand.SetCustomData(data:pointer; Size: Dword);
+destructor TMessageCommand.Destroy;
 begin
-  fCustomData := data;
-  fcdSize := size;
+  ftarget := 0;
+  inherited;
 end;
 
-{ TPHKCommands }
-
-function TCommands.Add: integer;
+procedure TMessageCommand.Execute;
 begin
-  result := fcmd.Add(TCommand.create);
-  fcmd[result].findex := result;
+  if (ftarget <> 0) then
+     SendMessage(ftarget,WM_PHKHOTKEY,0,0);
+end;
+
+function TMessageCommand.Typeof: TCommandType;
+begin
+  result := ctMessage;
+end;
+
+{ TCommands }
+
+function TCommands.AddActionCommand(Act: TBasicAction): integer;
+begin
+  result := fcmds.Add(nil);
+  fcmds[result] := TActionCommand.create(result);
+  TActioncommand(fcmds[result]).faction := Act;
+end;
+
+function TCommands.AddEventCommand(proc: TNotifyCommand): integer;
+begin
+  result := fcmds.Add(nil);
+  fcmds[result] := TEventCommand.create(result);
+  TEventCommand(fcmds[result]).fonExecute := proc;
+end;
+
+function TCommands.AddMessageCommand(Window: HWND): integer;
+begin
+  result := fcmds.Add(nil);
+  fcmds[result] := TMessageCommand.create(result);
+  TMessageCommand(fcmds[result]).fTarget := Window;
 end;
 
 function TCommands.Count: integer;
 begin
-  result := fcmd.count;
+  result := fcmds.count;
 end;
 
 constructor TCommands.Create;
 begin
   inherited;
-  fcmd := TObjectlist<TCommand>.create(true);
+  fcmds := TObjectList<TBasicCommand>.create(true);
 end;
 
-procedure TCommands.Delete(index: integer);
+procedure TCommands.DeleteCommand(Index: integer);
 begin
-  fcmd.Delete(index);
+  if (Index >= 0) and (index < fcmds.count) then
+    fcmds.Delete(index);
 end;
 
 destructor TCommands.Destroy;
 begin
-  fcmd.free;
+  fcmds.free;
   inherited;
 end;
 
-procedure TCommands.Execute(Index:integer;CustomData:TCustomData=NIL;DataSize:DWord=0);
+procedure TCommands.Execute(index: integer);
 begin
-  if (Index >= 0) and (index < fcmd.count) then
-    fcmd[index].Execute(CustomData,datasize);
+  if (index >= 0) and (index < fcmds.count) then
+    fcmds[index].Execute;
 end;
 
-procedure TCommands.ExecuteAll(CustomData:TCustomData=NIL;datasize:DWord=0);
+procedure TCommands.ExecuteAll;
 var
   i : integer;
 begin
-  for I := 0 to fcmd.count-1 do
-    fcmd[i].Execute(CustomData,datasize);
+  for I := 0 to fcmds.count-1 do
+    fcmds[i].Execute;
 end;
 
-function TCommands.GetEnumerator: TEnumerator<TCommand>;
-begin
-  result := fcmd.GetEnumerator;
-end;
-
-function TCommands.GetItem(index: integer): TCommand;
+function TCommands.GetCommand(Index: integer): TBasicCommand;
 begin
   result := NIL;
-  if (index >= 0) and (index < fcmd.count) then
-    result := fcmd[index];
+  if (index >= 0) and (index < fcmds.count) then
+    result := fcmds[index];
+end;
+
+function TCommands.GetEnumerator: TEnumerator<TBasicCommand>;
+begin
+  result := fcmds.GetEnumerator;
 end;
 
 end.

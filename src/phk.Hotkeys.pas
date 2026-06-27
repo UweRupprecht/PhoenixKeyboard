@@ -23,6 +23,7 @@ Type
   //Definition of a single Hotkey
   THotKey = Class
   private
+    fHotId : integer; //identifing a Hotkey
     fKey : TPHK_Keys; //We can have more than one keystroke !
     fstate : THotKeyState;
     fCmd   : TCommands; //maybe multiple commands
@@ -30,7 +31,7 @@ Type
       function GetState(index:THotKeyState):boolean;
       Procedure SetState(index:THotKeyState;value:boolean);
   public
-    constructor Create;
+    constructor Create(HotId:Integer);
     Destructor Destroy;override;
 
     //Simple checks, if the given code and modifer matches one of the keystrokes
@@ -40,13 +41,18 @@ Type
     //executes the defined command(s)
     function HandleKeyStroke(ACode:DWord;Modifier:phk_modifierkeys):THotKeyState;
 
-    //Simplify handling
+    //Simplify handling; Keys
     function AddKey(ACode:DWord;Modifier:phk_ModifierKeys):integer;
     function DelKey(ACode:DWord;Modifier:phk_ModifierKeys):boolean;overload;
     function DelKey(Keyindex:integer):boolean;overload;
-
+    //Simplify Handling; commands;
+    Function AddEventCommand(Proc:TNotifyCommand):integer;
+    function AddActionCommand(Act:TBasicAction):integer;
+    function AddMessageCommand(Window:HwND):integer;
+    function DeleteCommand(CmdIndex:integer):boolean;
 
   published
+      Property HotID: Integer read fHotId;
       Property Keys : TPhk_Keys read fkey;
       Property Commands : TCommands read fcmd;
       Property ModeActive : boolean index hkInMode read GetState;
@@ -107,17 +113,35 @@ begin
   end;
 end;
 
+function THotKey.AddActionCommand(Act: TBasicAction): integer;
+begin
+  result := fcmd.AddActionCommand(act);
+end;
+
+function THotKey.AddEventCommand(Proc: TNotifyCommand): integer;
+begin
+  result := fcmd.AddEventCommand(proc);
+end;
+
 function THotKey.AddKey(ACode: DWord; Modifier: phk_ModifierKeys): integer;
 begin
   result := fkey.Add(ACode,Modifier);
 end;
 
-constructor THotKey.Create;
+function THotKey.AddMessageCommand(Window: HwND): integer;
 begin
-  inherited;
+  result := -1;
+  if (window <> 0) then
+    result := fcmd.AddMessageCommand(window);
+end;
+
+constructor THotKey.Create(HotID:integer);
+begin
+  inherited create;
   fkey := TPHK_Keys.create;
   fcmd := TCommands.create;
   fstate := hkNone;
+  fHotId := HotID;
 end;
 
 function THotKey.DelKey(ACode: DWord; Modifier: phk_ModifierKeys): boolean;
@@ -136,6 +160,16 @@ begin
   end;
   if (idx > -1) then
     result := fkey.Remove(idx);
+end;
+
+function THotKey.DeleteCommand(CmdIndex: integer): boolean;
+begin
+  result := false;
+  if (CmdIndex >= 0) and (CmdIndex < fcmd.Count) then
+  begin
+    fcmd.DeleteCommand(CmdIndex);
+    result := true;
+  end;
 end;
 
 function THotKey.DelKey(Keyindex: integer): boolean;
@@ -189,7 +223,8 @@ end;
 
 function THotKeys.Add: integer;
 begin
-  result := fkeys.Add(THotKey.create);
+  result := fkeys.Add(NIL);
+  fkeys[result] := THotkey.create(result);
 end;
 
 function THotKeys.Count: integer;
