@@ -29,7 +29,7 @@ type
     Procedure DoKeyMessage(var msg:TMessage);
   public
     { Public-Deklarationen }
-    procedure hotkeyCommand(Sender:TObject;customdata:TCustomdata);
+    procedure hotkeyCommand(Sender:TObject);
   end;
 
 var
@@ -47,40 +47,28 @@ end;
 
 procedure TForm55.btncreateClick(Sender: TObject);
 var
-  ci,ki,idx : integer;
+  HotId:integer;
 
 begin
- idx := HotkeyManager.Hotkeys.Add;
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
-  ki := HotKeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkControl]);
-  ki := Hotkeymanager.hotkeys.HotKey[idx].keys.add(Ord('A'),[mkNone]);
-  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandEvent := true;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].OnCommand := HotkeyCommand;
+  HotId := HotkeyManager.AddHotkey(Ord('F'),[mkControl]);
+  HotKeyManager.AddHotkeyEvent(HotID,HotkeyCommand);
 
-  idx := HotkeyManager.Hotkeys.Add;
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('F'),[mkAlt]);
-  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandMessage := True;
-  Hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].TargetHandle := fhlp.Handle;
+  HotId := HotkeyManager.AddHotkey(Ord('F'),[mkLAlt]);
+  Hotkeymanager.AddHotkeyMessage(HotId,fhlp.Handle);
 
-  idx := HotkeyManager.Hotkeys.Add;
-  ki := Hotkeymanager.Hotkeys.HotKey[idx].Keys.Add(Ord('G'),[mkControl]);
-  ci := HotKeyManager.Hotkeys.HotKey[idx].Commands.Add;
-  hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].CommandAction := true;
-  Hotkeymanager.Hotkeys.HotKey[idx].Commands.cmd[ci].Action := acAction;
-
+  HotId := HotKeyManager.AddHotkey(Ord('G'),[mkLControl]);
+  HotkeyManager.AddHotkeyAction(HotId,acAction);
 end;
 
 procedure TForm55.btnEndClick(Sender: TObject);
 begin
-  hotkeymanager.StartHooking;
+  hotkeymanager.Stop;
   mdb.lines.append('Hook disabled');
 end;
 
 procedure TForm55.btnstartClick(Sender: TObject);
 begin
-  hotkeymanager.StartHooking;
+  hotkeymanager.Start(hmLocal);
   mdb.lines.append('Hook active');
 end;
 
@@ -100,7 +88,7 @@ begin
   fhlp.free;
 end;
 
-procedure TForm55.hotkeyCommand(Sender: TObject;Customdata:Tcustomdata);
+procedure TForm55.hotkeyCommand(Sender: TObject);
 begin
   Mdb.lines.append('Hotkey Command');
 end;
