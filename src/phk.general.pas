@@ -20,11 +20,11 @@ type
   //mkNumLock used to diff normal keys form the numpad keys
   //mkScroll might be used also for diff;More investiagtion needed
 
-  phk_modifierkey = (mkNone, mkLShift, mkRShift, mkShift, mkLControl, mkRControl, mkControl,
+  TModifierkey = (mkNone, mkLShift, mkRShift, mkShift, mkLControl, mkRControl, mkControl,
     mkLAlt, mkRAlt, mkAlt, mkLWin, mkRWin, mkWin, mkScroll, mkNumLock);
 
   //Set of as their can be multiple pressed at a time
-  phk_ModifierKeys = set of phk_modifierkey;
+  TModifierKeys = set of TModifierkey;
 
   //Api-struct for hook
   PKBDLLHOOKSTRUCT = ^KBDLLHOOKSTRUCT;
@@ -62,7 +62,7 @@ const
 
   //Virtual key codes for the modifier keys
 const
-  cPhk_ModifierKeyCodes: array[phk_modifierkey] of DWord = (
+  cPhk_ModifierKeyCodes: array[TModifierkey] of DWord = (
     0,           //value for None
     vkLShift,
     vkRShift,
@@ -89,7 +89,7 @@ type
   //basic record for storing infos on a keystroke
   TKeyData = Record
                Code : DWord; //Virtual Key code
-               Modifier : phk_ModifierKeys; //Modifier keys
+               Modifier : TModifierkeys; //Modifier keys
                State : TKeyState;
                Class Operator Initialize(out value:TKeyData);
   End;
@@ -117,12 +117,12 @@ Type
   TCustomData = Pointer;
 
 //Calls GetAsyncKeyState for each modifierkey (if needed)
-function GetModifierKeyStates: phk_ModifierKeys;
+function GetModifierKeyStates: TModifierkeys;
 //Get the string representation of a modifier keys set
-function ModifierToString(Modifier:phk_Modifierkeys):string;
+function ModifierToString(Modifier:TModifierkeys):string;
 //compares two modifier-sets;
 //result is true, when one of the FromHook-items is in the Defined Set
-function ModifierCompare(FromHook:PHK_MODIFIERKEYS;Defined:PHK_MODIFIERKEYS):boolean;
+function ModifierCompare(FromHook:TModifierkeys;Defined:TModifierkeys):boolean;
 implementation
 { TPHK_KeyData }
 
@@ -133,13 +133,13 @@ begin
   value.State := ksNone;
 end;
 
-function GetModifierKeyStates: phk_ModifierKeys;
+function GetModifierKeyStates: TModifierkeys;
 var
-  i: phk_modifierkey;
+  i: TModifierkey;
 
 begin
   result := [mkNone];
-  for i := Low(phk_modifierkey) to High(phk_modifierkey) do
+  for i := Low(TModifierkey) to High(TModifierkey) do
   begin
     if cPhk_ModifierKeyCodes[i] > 0 then
       if (GetAsyncKeyState(cPhk_ModifierKeyCodes[i]) and $8000) <> 0 then
@@ -155,7 +155,7 @@ begin
   end;
 end;
 
-function ModifierToString(Modifier:phk_Modifierkeys):string;
+function ModifierToString(Modifier:TModifierkeys):string;
 begin
   result := '[';
   if (mkNone in Modifier) then result := result+'None,';
@@ -176,12 +176,12 @@ begin
   result := copy(result,0,length(result)-1)+']';
 end;
 
-function ModifierCompare(FromHook:PHK_MODIFIERKEYS;Defined:PHK_MODIFIERKEYS):boolean;
+function ModifierCompare(FromHook:TModifierkeys;Defined:TModifierkeys):boolean;
 var
-  i : PHK_MODIFIERKEY;
+  i : TModifierkey;
 begin
   result := False;
-  for I := Low(PHK_MODIFIERKEY) to High(PHK_MODIFIERKEY) do
+  for I := Low(TModifierkey) to High(TModifierkey) do
     if (i in Defined) and (i in FromHook) then
     begin
       result := true;

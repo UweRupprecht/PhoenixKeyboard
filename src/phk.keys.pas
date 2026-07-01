@@ -16,18 +16,18 @@ type
     fdata: TKeyData;
     function GetEnable: boolean;
     function GetKeyCode: DWord;
-    function GetModifier: phk_ModifierKeys;
+    function GetModifier: TModifierkeys;
     procedure SetEnable(const Value: boolean);
     procedure SetKeyCode(const Value: DWord);
-    procedure SetModifier(const Value: phk_ModifierKeys);
+    procedure SetModifier(const Value: TModifierkeys);
   protected
   public
     constructor Create;
     Destructor Destroy;override;
     //Set the data with one call;
-    Procedure SetData(ACode:DWord;Modifiers:PHK_MODIFIERKEYS;state:TKeyState=ksNone);
+    Procedure SetData(ACode:DWord;Modifiers:TModifierkeys;state:TKeyState=ksNone);
     //Does the defines key matches a given Key (incl. Modifierkeys)
-    function MatchKey(Code:Dword;Modifier:PHK_MODIFIERKEYS):boolean;
+    function MatchKey(Code:Dword;Modifier:TModifierkeys):boolean;
     //Current state of a key
     function KeyState:TKeyState;
     //Simply set the state, when the key was handled to pressed
@@ -37,7 +37,7 @@ type
      //Virtual Key code of the key
      Property Keycode     : DWord read GetKeyCode write SetKeyCode;
      //Modifier Key(s) that needs to be pressed
-     Property Modifiers   : phk_ModifierKeys read GetModifier write SetModifier;
+     Property Modifiers   : TModifierkeys read GetModifier write SetModifier;
      Property Enabled     : boolean read GetEnable write SetEnable;
   end;
 
@@ -54,7 +54,7 @@ type
 
     //List handling stuff
     function Add:integer;overload;
-    function Add(ACode:DWord;Modifiers:phk_ModifierKeys):integer;overload;
+    function Add(ACode:DWord;Modifiers:TModifierkeys):integer;overload;
     function Remove(Index:integer):boolean;
     function Count:integer;
 
@@ -90,7 +90,7 @@ begin
   result := fdata.Code;
 end;
 
-function TPHK_Key.GetModifier: phk_ModifierKeys;
+function TPHK_Key.GetModifier: TModifierkeys;
 begin
   result := fdata.Modifier;
 end;
@@ -100,12 +100,12 @@ begin
   result := fdata.State;
 end;
 
-function TPHK_Key.MatchKey(Code: Dword; Modifier: PHK_MODIFIERKEYS): boolean;
+function TPHK_Key.MatchKey(Code: Dword; Modifier: TModifierkeys): boolean;
 begin
   result := (fdata.State <> ksDisabled) and (fdata.Code = code) and (ModifierCompare(Modifier,fdata.Modifier));
 end;
 
-procedure TPHK_Key.SetData(ACode: DWord; Modifiers: PHK_MODIFIERKEYS;
+procedure TPHK_Key.SetData(ACode: DWord; Modifiers: TModifierkeys;
   state: TKeyState);
 begin
   fdata.Code := ACode;
@@ -126,7 +126,7 @@ begin
   fdata.Code := value;
 end;
 
-procedure TPHK_Key.SetModifier(const Value: phk_ModifierKeys);
+procedure TPHK_Key.SetModifier(const Value: TModifierkeys);
 begin
   fdata.Modifier := value;
 end;
@@ -144,7 +144,7 @@ begin
   result := fkeys.Add(TPHK_KEY.create);
 end;
 
-function TPHK_Keys.Add(ACode: DWord; Modifiers: phk_ModifierKeys): integer;
+function TPHK_Keys.Add(ACode: DWord; Modifiers: TModifierkeys): integer;
 begin
   result := add;
   fkeys[result].Keycode := ACode;

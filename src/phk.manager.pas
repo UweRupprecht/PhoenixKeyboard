@@ -32,7 +32,7 @@ Type
 
      function HandleGlobalHookMessage(ncode:Integer;wParam:WPARAM;lParam:LPARAM):LResult;
      function HandleLocalHookMessage(nCode:integer;wParam:WPARAM;lParam:LPARAM):LResult;
-     Procedure DoHotKey(Sender:TObject;Hotkey:THotkey;ACode:DWord;Modifier:phk_modifierkeys;var handled:boolean);
+     Procedure DoHotKey(Sender:TObject;Hotkey:THotkey;ACode:DWord;Modifier:TModifierkeys;var handled:boolean);
   protected
     class Procedure FreeInstance;
     function CheckHotId(HotId:integer):boolean;
@@ -54,12 +54,12 @@ Type
     //Keycode is the virtual key code for the keystroke
     //Modifiers is a set of modifier keys (shift,control....)
     //Returns the HotId of the new Hotkey
-    function AddHotkey(Keycode:dWord;Modifiers:phk_modifierkeys):integer;
+    function AddHotkey(Keycode:dWord;Modifiers:TModifierkeys):integer;
     //Adds another keystroke to an existing Hotkey
     //HotID is the id of the existing hotkey
     //Keycode is the virtual key code of the key
     //Modifiers is a set of modifier keys
-    Procedure AddKeyStroke(HotID:integer;KeyCode:DWord;Modifiers:phk_modifierkeys);
+    Procedure AddKeyStroke(HotID:integer;KeyCode:DWord;Modifiers:TModifierkeys);
     //Disables/enables a hotkey
     //HotID is the ID of an existing Hotkey
     //disable = disable/enable hotkey
@@ -102,7 +102,7 @@ end;
 { HotkeyManager }
 
 function THotkeyManager.AddHotkey(Keycode: dWord;
-  Modifiers: phk_modifierkeys): integer;
+  Modifiers: TModifierkeys): integer;
 begin
   result := fHotkeys.Add;
   fhotkeys.HotKey[result].AddKey(KeyCode,Modifiers);
@@ -127,7 +127,7 @@ begin
 end;
 
 procedure THotkeyManager.AddKeyStroke(HotID: integer; KeyCode: DWord;
-  Modifiers: phk_modifierkeys);
+  Modifiers: TModifierkeys);
 begin
   if CheckHotID(HotID) then
     fhotkeys.HotKey[hotid].AddKey(KeyCode,Modifiers);
@@ -158,7 +158,7 @@ begin
 end;
 
 procedure THotkeyManager.DoHotKey(Sender: TObject; Hotkey: THotkey; ACode: DWord;
-  Modifier: phk_modifierkeys; var handled: boolean);
+  Modifier: TModifierkeys; var handled: boolean);
 var
   state :  THotKeyState;
 begin
@@ -181,7 +181,7 @@ function THotkeyManager.HandleGlobalHookMessage(ncode: Integer; wParam: WPARAM;
 var
   pkh: PKBDLLHOOKSTRUCT;
   currentVK:DWord;
-  currentMods : phk_ModifierKeys;
+  currentMods : TModifierkeys;
   WasHandled,generalHandled : boolean;
 begin
   if (nCode = HC_ACTION) then
@@ -234,7 +234,7 @@ function THotkeyManager.HandleLocalHookMessage(nCode: integer; wParam: WPARAM;
   lParam: LPARAM): LResult;
 var
   currentVK:DWord;
-  currentMods : phk_ModifierKeys;
+  currentMods : TModifierkeys;
   isKeyUp : boolean;
   WasHandled,generalHandled : boolean;
 begin

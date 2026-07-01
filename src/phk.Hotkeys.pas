@@ -36,14 +36,14 @@ Type
 
     //Simple checks, if the given code and modifer matches one of the keystrokes
     //Does not modifing the state
-    function MatchKey(ACode:DWord;Modifier:phk_modifierkeys):boolean;
+    function MatchKey(ACode:DWord;Modifier:TModifierkeys):boolean;
     //Handles the given keystroke, set the state and if hkTrigger is reached
     //executes the defined command(s)
-    function HandleKeyStroke(ACode:DWord;Modifier:phk_modifierkeys):THotKeyState;
+    function HandleKeyStroke(ACode:DWord;Modifier:TModifierkeys):THotKeyState;
 
     //Simplify handling; Keys
-    function AddKey(ACode:DWord;Modifier:phk_ModifierKeys):integer;
-    function DelKey(ACode:DWord;Modifier:phk_ModifierKeys):boolean;overload;
+    function AddKey(ACode:DWord;Modifier:TModifierkeys):integer;
+    function DelKey(ACode:DWord;Modifier:TModifierkeys):boolean;overload;
     function DelKey(Keyindex:integer):boolean;overload;
     //Simplify Handling; commands;
     Function AddEventCommand(Proc:TNotifyCommand):integer;
@@ -71,10 +71,10 @@ Type
     Destructor Destroy;override;
 
     //Only checks if the given keystroke matches a hotkey
-    function MatchesHotkey(ACode:DWord;Modifiers:phk_modifierkeys):boolean;
+    function MatchesHotkey(ACode:DWord;Modifiers:TModifierkeys):boolean;
 
     //Handles a given keystroke; states where modified and commands will be executed
-    function HandleHotkey(ACode:DWord;Modifiers:phk_Modifierkeys):boolean;
+    function HandleHotkey(ACode:DWord;Modifiers:TModifierkeys):boolean;
 
     //List functions
     function Add:integer;
@@ -94,7 +94,7 @@ implementation
 
 { THotKey }
 
-function THotKey.MatchKey(ACode: Dword;Modifier: phk_ModifierKeys): boolean;
+function THotKey.MatchKey(ACode: Dword;Modifier: TModifierkeys): boolean;
 var
   i : integer;
   tmp : THotKeyState;
@@ -123,7 +123,7 @@ begin
   result := fcmd.AddEventCommand(proc);
 end;
 
-function THotKey.AddKey(ACode: DWord; Modifier: phk_ModifierKeys): integer;
+function THotKey.AddKey(ACode: DWord; Modifier: TModifierkeys): integer;
 begin
   result := fkey.Add(ACode,Modifier);
 end;
@@ -144,7 +144,7 @@ begin
   fHotId := HotID;
 end;
 
-function THotKey.DelKey(ACode: DWord; Modifier: phk_ModifierKeys): boolean;
+function THotKey.DelKey(ACode: DWord; Modifier: TModifierkeys): boolean;
 var
   i,idx : integer;
 begin
@@ -189,7 +189,7 @@ begin
   result := index = fstate;
 end;
 
-function THotKey.HandleKeyStroke(ACode:DWord;Modifier:phk_modifierkeys):THotKeyState;
+function THotKey.HandleKeyStroke(ACode:DWord;Modifier:TModifierkeys):THotKeyState;
 var
   i : integer;
   tmp : boolean;
@@ -266,7 +266,7 @@ begin
     result := fkeys[index];
 end;
 
-function THotKeys.HandleHotKey(ACode: DWord;Modifiers: phk_ModifierKeys): boolean;
+function THotKeys.HandleHotKey(ACode: DWord;Modifiers: TModifierkeys): boolean;
 begin
   result := false;
   for var k in fkeys do
@@ -279,7 +279,7 @@ begin
   end;
 end;
 
-function THotKeys.Matcheshotkey(ACode: DWord; Modifiers: phk_ModifierKeys): boolean;
+function THotKeys.Matcheshotkey(ACode: DWord; Modifiers: TModifierkeys): boolean;
 var
   i : integer;
 begin
